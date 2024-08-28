@@ -140,13 +140,16 @@ cuvsError_t cuvsRMMFree(cuvsResources_t res, void* ptr, size_t bytes);
  * available memory
  * @return cuvsError_t
  */
+
 cuvsError_t cuvsRMMPoolMemoryResourceEnable(int initial_pool_size_percent,
-                                            int max_pool_size_percent);
+                                            int max_pool_size_percent,
+                                            int managed);
 /**
  * @brief Resets the memory resource to use the default memory resource (cuda_memory_resource)
  * @return cuvsError_t
  */
 cuvsError_t cuvsRMMMemoryResourceReset();
+
 
 /** @} */
 
