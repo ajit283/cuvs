@@ -68,7 +68,6 @@ extern "C" cuvsError_t cuvsStreamSync(cuvsResources_t res)
   });
 }
 
-thread_local std::unique_ptr<rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource>> pool_mr;
 
 extern "C" cuvsError_t cuvsRMMAlloc(cuvsResources_t res, void** ptr, size_t bytes)
 {
@@ -99,14 +98,6 @@ extern "C" cuvsError_t cuvsRMMPoolMemoryResourceEnable(int initial_pool_size_per
                                                        int managed)
 {
   return cuvs::core::translate_exceptions([=] {
-    // Upstream memory resource needs to be a cuda_memory_resource
-    auto cuda_mr         = rmm::mr::get_current_device_resource();
-    auto* cuda_mr_casted = dynamic_cast<rmm::mr::cuda_memory_resource*>(cuda_mr);
-    if (cuda_mr_casted == nullptr) {
-      throw std::runtime_error("Current memory resource is not a cuda_memory_resource");
-    }
-
-
     auto initial_size = rmm::percent_of_free_device_memory(initial_pool_size_percent);
     auto max_size     = rmm::percent_of_free_device_memory(max_pool_size_percent);
 
