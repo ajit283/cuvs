@@ -22,6 +22,7 @@
 #include <raft/core/resources.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
+#include <rmm/mr/host/pinned_memory_resource.hpp>
 #include <thread>
 
 extern "C" cuvsError_t cuvsResourcesCreate(cuvsResources_t* res)
@@ -80,6 +81,21 @@ extern "C" cuvsError_t cuvsRMMFree(cuvsResources_t res, void* ptr, size_t bytes)
     auto mr      = rmm::mr::get_current_device_resource();
     mr->deallocate(ptr, bytes, raft::resource::get_cuda_stream(*res_ptr));
   });
+}
+
+thread_local std::unique_ptr<rmm::mr::pinned_memory_resource> pinned_mr;
+
+extern "C" cuvsError_t cuvsRMMHostAlloc(void** ptr, size_t bytes)
+{
+  return cuvs::core::translate_exceptions([=] {
+    if (pinned_mr == nullptr) { pinned_mr = std::make_unique<rmm::mr::pinned_memory_resource>(); }
+    *ptr = pinned_mr->allocate(bytes);
+  });
+}
+
+extern "C" cuvsError_t cuvsRMMHostFree(void* ptr, size_t bytes)
+{
+  return cuvs::core::translate_exceptions([=] { pinned_mr->deallocate(ptr, bytes); });
 }
 
 thread_local std::string last_error_text = "";
