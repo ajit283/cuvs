@@ -112,6 +112,7 @@ extern "C" cuvsError_t cuvsRMMMemoryResourceReset()
   });
 }
 
+
 thread_local std::unique_ptr<rmm::mr::pinned_memory_resource> pinned_mr;
 
 extern "C" cuvsError_t cuvsRMMHostAlloc(void** ptr, size_t bytes)
@@ -126,6 +127,7 @@ extern "C" cuvsError_t cuvsRMMHostFree(void* ptr, size_t bytes)
 {
   return cuvs::core::translate_exceptions([=] { pinned_mr->deallocate(ptr, bytes); });
 }
+
 
 thread_local std::string last_error_text = "";
 
