@@ -9,8 +9,13 @@ package cuvs
 // #include <cuvs/neighbors/ivf_pq.h>
 import "C"
 
-func EnablePoolMemoryResource(initial_pool_size_percent int, max_pool_size_percent int) error {
-	return CheckCuvs(CuvsError(C.cuvsRMMPoolMemoryResourceEnable(C.int(initial_pool_size_percent), C.int(max_pool_size_percent))))
+func EnablePoolMemoryResource(initial_pool_size_percent int, max_pool_size_percent int, managed bool) error {
+
+	managed_c := C.int(0)
+	if managed {
+		managed_c = C.int(1)
+	}
+	return CheckCuvs(CuvsError(C.cuvsRMMPoolMemoryResourceEnable(C.int(initial_pool_size_percent), C.int(max_pool_size_percent), managed_c)))
 }
 
 func ResetMemoryResource() error {

@@ -24,14 +24,14 @@ func TestDistance(t *testing.T) {
 		}
 	}
 
-	dataset, _ := cuvs.NewTensor(true, TestDataset)
+	dataset, _ := cuvs.NewTensor(true, TestDataset, false)
 
 	DistancesDataset := make([][]float32, NDataPoints)
 	for i := range DistancesDataset {
 		DistancesDataset[i] = make([]float32, NDataPoints)
 	}
 
-	distances, _ := cuvs.NewTensor(true, DistancesDataset)
+	distances, _ := cuvs.NewTensor(true, DistancesDataset, false)
 
 	distances.ToDevice(&resource)
 	dataset.ToDevice(&resource)

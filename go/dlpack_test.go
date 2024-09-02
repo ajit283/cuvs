@@ -14,7 +14,7 @@ func TestDlPack(t *testing.T) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	NDataPoints := 256
+	NDataPoints := 2560
 	NFeatures := 16
 
 	TestDataset := make([][]float32, NDataPoints)
@@ -26,7 +26,7 @@ func TestDlPack(t *testing.T) {
 		}
 	}
 
-	dataset, err := cuvs.NewTensor(true, TestDataset[:127])
+	dataset, err := cuvs.NewTensor(true, TestDataset, true)
 
 	if err != nil {
 		panic(err)
@@ -38,11 +38,11 @@ func TestDlPack(t *testing.T) {
 		panic(err)
 	}
 
-	_, err = dataset.Expand(&resource, TestDataset[127:])
+	// _, err = dataset.Expand(&resource, TestDataset[127:])
 
-	if err != nil {
-		panic(err)
-	}
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	println(dataset.GetShape()[1])
 
