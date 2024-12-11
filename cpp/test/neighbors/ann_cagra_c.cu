@@ -441,10 +441,15 @@ TEST(CagraC, BuildExtendSearch)
   distances_tensor.dl_tensor.shape              = distances_shape;
   distances_tensor.dl_tensor.strides            = nullptr;
 
+  cuvsFilter filter;
+  filter.type = NO_FILTER;
+  filter.addr = (uintptr_t)NULL;
+
   // search index
   cuvsCagraSearchParams_t search_params;
   cuvsCagraSearchParamsCreate(&search_params);
-  cuvsCagraSearch(res, search_params, index, &queries_tensor, &neighbors_tensor, &distances_tensor);
+  cuvsCagraSearch(
+    res, search_params, index, &queries_tensor, &neighbors_tensor, &distances_tensor, filter);
 
   // make sure that extend_return_d points to the extended dataset
   ASSERT_TRUE(cuvs::devArrMatch(
