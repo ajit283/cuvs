@@ -88,20 +88,16 @@ func SearchIndex[T any](Resources cuvs.Resource, params *SearchParams, index *Ca
 	}
 
 	var filter C.cuvsFilter
-
 	bitset := createBitset(allowList)
-
-	allowListTensor, err := cuvs.NewTensor[uint32]([][]uint32{bitset})
+	allowListTensor, err := cuvs.NewVector[uint32](bitset)
 	if err != nil {
 		return err
 	}
 	defer allowListTensor.Close()
-
 	_, err = allowListTensor.ToDevice(&Resources)
 	if err != nil {
 		return err
 	}
-
 	if allowList == nil {
 		filter = C.cuvsFilter{
 			_type: C.NO_FILTER,
@@ -113,7 +109,6 @@ func SearchIndex[T any](Resources cuvs.Resource, params *SearchParams, index *Ca
 			addr:  C.uintptr_t(uintptr(unsafe.Pointer(allowListTensor.C_tensor))),
 		}
 	}
-
 	return cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraSearch(C.cuvsResources_t(Resources.Resource), params.params, index.index, (*C.DLManagedTensor)(unsafe.Pointer(queries.C_tensor)), (*C.DLManagedTensor)(unsafe.Pointer(neighbors.C_tensor)), (*C.DLManagedTensor)(unsafe.Pointer(distances.C_tensor)), filter)))
 }
 
@@ -127,10 +122,8 @@ func createBitset(allowList []uint32) []uint32 {
 		}
 	}
 	size := (maxID >> 5) + 1 // Division by 32, add 1 to handle remainder
-
 	// Create and initialize bitset array
 	bitset := make([]uint32, size)
-
 	// Set bits for each ID in allowList
 	for _, id := range allowList {
 		// Calculate which uint32 in our array (divide by 32)
@@ -140,6 +133,5 @@ func createBitset(allowList []uint32) []uint32 {
 		// Set the bit
 		bitset[arrayIndex] |= 1 << bitPosition
 	}
-
 	return bitset
 }
