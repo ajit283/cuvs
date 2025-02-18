@@ -274,6 +274,8 @@ if(TARGET cuvs::c_api)
 
   ConfigureTest(NAME CAGRA_C_TEST PATH neighbors/ann_cagra_c.cu C_LIB)
 
+  ConfigureTest(NAME DYNAMIC_BATCHING_C_TEST PATH neighbors/dynamic_batching_c.cu C_LIB)
+  
   if(BUILD_CAGRA_HNSWLIB)
     ConfigureTest(NAME HNSW_C_TEST PATH neighbors/ann_hnsw_c.cu C_LIB)
     target_link_libraries(NEIGHBORS_HNSW_TEST PRIVATE hnswlib::hnswlib)
