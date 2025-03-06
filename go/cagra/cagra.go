@@ -73,6 +73,11 @@ func (index *CagraIndex) Close() error {
 	return nil
 }
 
+// Get underlying C index
+func (index *CagraIndex) GetIndex() *C.cuvsCagraIndex_t {
+	return &index.index
+}
+
 // Perform a Approximate Nearest Neighbors search on the Index
 //
 // # Arguments
