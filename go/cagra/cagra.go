@@ -94,22 +94,23 @@ func SearchIndex[T any](Resources cuvs.Resource, params *SearchParams, index *Ca
 	}
 
 	var filter C.cuvsFilter
-	bitset := createBitset(allowList)
-	allowListTensor, err := cuvs.NewVector[uint32](bitset)
-	if err != nil {
-		return err
-	}
-	defer allowListTensor.Close()
-	_, err = allowListTensor.ToDevice(&Resources)
-	if err != nil {
-		return err
-	}
+
 	if allowList == nil {
 		filter = C.cuvsFilter{
 			_type: C.NO_FILTER,
 			addr:  C.uintptr_t(0),
 		}
 	} else {
+		bitset := createBitset(allowList)
+		allowListTensor, err := cuvs.NewVector[uint32](bitset)
+		if err != nil {
+			return err
+		}
+		defer allowListTensor.Close()
+		_, err = allowListTensor.ToDevice(&Resources)
+		if err != nil {
+			return err
+		}
 		filter = C.cuvsFilter{
 			_type: C.BITSET,
 			addr:  C.uintptr_t(uintptr(unsafe.Pointer(allowListTensor.C_tensor))),
