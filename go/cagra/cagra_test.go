@@ -37,6 +37,7 @@ func TestCagra(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating index params: %v", err)
 	}
+	indexParams.SetMetric(cuvs.DistanceSQEuclidean)
 	defer indexParams.Close()
 
 	index, _ := CreateIndex()
@@ -235,10 +236,6 @@ func TestCagraFiltering(t *testing.T) {
 		allowList[i] = uint32(i + nFilteredOut)
 	}
 
-	if _, err := queries1.ToDevice(&resource); err != nil {
-		t.Fatalf("error moving queries1 back to device: %v", err)
-	}
-
 	if _, err := neighbors.ToDevice(&resource); err != nil {
 		t.Fatalf("error moving neighbors back to device: %v", err)
 	}
@@ -281,10 +278,6 @@ func TestCagraFiltering(t *testing.T) {
 
 	if _, err := neighbors.ToDevice(&resource); err != nil {
 		t.Fatalf("error moving neighbors back to device: %v", err)
-	}
-
-	if _, err := distances.ToDevice(&resource); err != nil {
-		t.Fatalf("error moving distances back to device: %v", err)
 	}
 
 	err = SearchIndex(resource, SearchParams, index, &queries2, &neighbors, &distances, allowList)
