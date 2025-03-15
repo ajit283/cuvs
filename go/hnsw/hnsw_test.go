@@ -124,7 +124,7 @@ func TestHnswFromCagra(t *testing.T) {
 	t.Log("CAGRA index built")
 
 	// Convert CAGRA to HNSW
-	if err := hnsw.FromCagra(resource, hnswIndexParams, cagraIndex, hnswIndex); err != nil {
+	if err := hnsw.FromCagra[int](resource, hnswIndexParams, cagraIndex, hnswIndex, nil); err != nil {
 		t.Fatalf("error converting CAGRA to HNSW: %v", err)
 	}
 
@@ -278,7 +278,7 @@ func TestHnswExtend(t *testing.T) {
 	defer hnswIndex.Close()
 
 	// Convert CAGRA to HNSW
-	if err := hnsw.FromCagra(resource, hnswIndexParams, cagraIndex, hnswIndex); err != nil {
+	if err := hnsw.FromCagra[int](resource, hnswIndexParams, cagraIndex, hnswIndex, nil); err != nil {
 		t.Fatalf("error converting CAGRA to HNSW: %v", err)
 	}
 
@@ -452,7 +452,7 @@ func TestHnswSerialize(t *testing.T) {
 	}
 	defer hnswIndex.Close()
 
-	if err := hnsw.FromCagra(resource, hnswIndexParams, cagraIndex, hnswIndex); err != nil {
+	if err := hnsw.FromCagra[int](resource, hnswIndexParams, cagraIndex, hnswIndex, nil); err != nil {
 		t.Fatalf("error converting CAGRA to HNSW: %v", err)
 	}
 

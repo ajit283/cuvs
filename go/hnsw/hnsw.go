@@ -94,14 +94,28 @@ func (index *HnswIndex) Close() error {
 // * `params` - HNSW index parameters
 // * `cagraIndex` - Cagra index to convert
 // * `hnswIndex` - HNSW index to return
-func FromCagra(Resources cuvs.Resource, params *IndexParams, cagraIndex *cagra.CagraIndex, hnswIndex *HnswIndex) error {
+func FromCagra[T any](Resources cuvs.Resource, params *IndexParams, cagraIndex *cagra.CagraIndex, hnswIndex *HnswIndex, dataset *cuvs.Tensor[T]) error {
+
+	if(dataset != nil) {
+		err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsHnswFromCagraWithDataset(
+		C.cuvsResources_t(Resources.Resource),
+		params.params,
+		(C.cuvsCagraIndex_t)(unsafe.Pointer(*cagraIndex.GetIndex())),
+		hnswIndex.index, 	
+			(*C.DLManagedTensor)(unsafe.Pointer(dataset.C_tensor)),)))
+	if err != nil {
+		return err
+	}
+	} else {
 	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsHnswFromCagra(
 		C.cuvsResources_t(Resources.Resource),
 		params.params,
 		(C.cuvsCagraIndex_t)(unsafe.Pointer(*cagraIndex.GetIndex())),
-		hnswIndex.index)))
+		hnswIndex.index,
+		)))
 	if err != nil {
 		return err
+	}
 	}
 	hnswIndex.trained = true
 	return nil
