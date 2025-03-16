@@ -11,7 +11,7 @@ import (
 
 // Supplemental parameters to search IVF PQ Index
 type SearchParams struct {
-	params C.cuvsIvfPqSearchParams_t
+	Params C.cuvsIvfPqSearchParams_t
 }
 
 type lutDtype int
@@ -25,17 +25,23 @@ const (
 	Lut_Int16
 	Lut_Int32
 	Lut_Int64
+	Lut_Float16
+	Lut_Float32
+	Lut_Float64
 )
 
 var cLutDtypes = map[lutDtype]int{
-	Lut_Uint8:  C.CUDA_R_8U,
-	Lut_Uint16: C.CUDA_R_16U,
-	Lut_Uint32: C.CUDA_R_32U,
-	Lut_Uint64: C.CUDA_R_64U,
-	Lut_Int8:   C.CUDA_R_8I,
-	Lut_Int16:  C.CUDA_R_16I,
-	Lut_Int32:  C.CUDA_R_32I,
-	Lut_Int64:  C.CUDA_R_64I,
+	Lut_Uint8:   C.CUDA_R_8U,
+	Lut_Uint16:  C.CUDA_R_16U,
+	Lut_Uint32:  C.CUDA_R_32U,
+	Lut_Uint64:  C.CUDA_R_64U,
+	Lut_Int8:    C.CUDA_R_8I,
+	Lut_Int16:   C.CUDA_R_16I,
+	Lut_Int32:   C.CUDA_R_32I,
+	Lut_Int64:   C.CUDA_R_64I,
+	Lut_Float16: C.CUDA_R_16F,
+	Lut_Float32: C.CUDA_R_32F,
+	Lut_Float64: C.CUDA_R_64F,
 }
 
 type internalDistanceDtype int
@@ -59,12 +65,12 @@ func CreateSearchParams() (*SearchParams, error) {
 		return nil, err
 	}
 
-	return &SearchParams{params: params}, nil
+	return &SearchParams{Params: params}, nil
 }
 
 // The number of clusters to search.
 func (p *SearchParams) SetNProbes(n_probes uint32) (*SearchParams, error) {
-	p.params.n_probes = C.uint32_t(n_probes)
+	p.Params.n_probes = C.uint32_t(n_probes)
 	return p, nil
 }
 
@@ -80,7 +86,7 @@ func (p *SearchParams) SetLutDtype(lut_dtype lutDtype) (*SearchParams, error) {
 	if !exists {
 		return nil, errors.New("cuvs: invalid lut_dtype")
 	}
-	p.params.lut_dtype = C.cudaDataType_t(CLutDtype)
+	p.Params.lut_dtype = C.cudaDataType_t(CLutDtype)
 
 	return p, nil
 }
@@ -92,14 +98,14 @@ func (p *SearchParams) SetInternalDistanceDtype(internal_distance_dtype internal
 	if !exists {
 		return nil, errors.New("cuvs: invalid internal_distance_dtype")
 	}
-	p.params.internal_distance_dtype = C.cudaDataType_t(CInternalDistanceDtype)
+	p.Params.internal_distance_dtype = C.cudaDataType_t(CInternalDistanceDtype)
 
 	return p, nil
 }
 
 // Destroys SearchParams
 func (p *SearchParams) Close() error {
-	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsIvfPqSearchParamsDestroy(p.params)))
+	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsIvfPqSearchParamsDestroy(p.Params)))
 	if err != nil {
 		return err
 	}
