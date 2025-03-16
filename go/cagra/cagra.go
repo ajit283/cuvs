@@ -1,6 +1,7 @@
 package cagra
 
 // #include <cuvs/neighbors/cagra.h>
+// #include <cuvs/neighbors/ivf_pq.h>
 import "C"
 
 import (
@@ -8,6 +9,7 @@ import (
 	"unsafe"
 
 	cuvs "github.com/rapidsai/cuvs/go"
+	"github.com/rapidsai/cuvs/go/ivf_pq"
 )
 
 // Cagra ANN Index
@@ -35,10 +37,18 @@ func CreateIndex() (*CagraIndex, error) {
 // * `params` - Parameters for building the index
 // * `dataset` - A row-major Tensor on either the host or device to index
 // * `index` - CagraIndex to build
-func BuildIndex[T any](Resources cuvs.Resource, params *IndexParams, dataset *cuvs.Tensor[T], index *CagraIndex) error {
-	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraBuild(C.ulong(Resources.Resource), params.params, (*C.DLManagedTensor)(unsafe.Pointer(dataset.C_tensor)), index.index)))
-	if err != nil {
-		return err
+func BuildIndex[T any](Resources cuvs.Resource, params *IndexParams, dataset *cuvs.Tensor[T], index *CagraIndex, ivfPqIndexParams *ivf_pq.IndexParams, ivfPqSearchParams *ivf_pq.SearchParams) error {
+	if ivfPqIndexParams != nil && ivfPqSearchParams != nil {
+		err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraBuildWithIVFPQ(C.ulong(Resources.Resource), params.params, (*C.DLManagedTensor)(unsafe.Pointer(dataset.C_tensor)), index.index, (C.cuvsIvfPqIndexParams_t)(unsafe.Pointer(ivfPqIndexParams.Params)), (C.cuvsIvfPqSearchParams_t)(unsafe.Pointer(ivfPqSearchParams.Params)))))
+		if err != nil {
+			return err
+		}
+	} else {
+
+		err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraBuild(C.ulong(Resources.Resource), params.params, (*C.DLManagedTensor)(unsafe.Pointer(dataset.C_tensor)), index.index)))
+		if err != nil {
+			return err
+		}
 	}
 	index.trained = true
 	return nil

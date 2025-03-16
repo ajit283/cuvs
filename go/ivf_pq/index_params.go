@@ -10,7 +10,7 @@ import (
 )
 
 type IndexParams struct {
-	params C.cuvsIvfPqIndexParams_t
+	Params C.cuvsIvfPqIndexParams_t
 }
 
 type codebookKind int
@@ -34,12 +34,12 @@ func CreateIndexParams() (*IndexParams, error) {
 		return nil, err
 	}
 
-	return &IndexParams{params: params}, nil
+	return &IndexParams{Params: params}, nil
 }
 
 // The number of clusters used in the coarse quantizer.
 func (p *IndexParams) SetNLists(n_lists uint32) (*IndexParams, error) {
-	p.params.n_lists = C.uint32_t(n_lists)
+	p.Params.n_lists = C.uint32_t(n_lists)
 	return p, nil
 }
 
@@ -50,20 +50,20 @@ func (p *IndexParams) SetMetric(metric cuvs.Distance) (*IndexParams, error) {
 	if !exists {
 		return nil, errors.New("cuvs: invalid distance metric")
 	}
-	p.params.metric = C.cuvsDistanceType(CMetric)
+	p.Params.metric = C.cuvsDistanceType(CMetric)
 
 	return p, nil
 }
 
 // Metric argument for Minkowski distances - set to 2.0 if not applicable
 func (p *IndexParams) SetMetricArg(metric_arg float32) (*IndexParams, error) {
-	p.params.metric_arg = C.float(metric_arg)
+	p.Params.metric_arg = C.float(metric_arg)
 	return p, nil
 }
 
 // The number of iterations searching for kmeans centers during index building.
 func (p *IndexParams) SetKMeansNIters(kmeans_n_iters uint32) (*IndexParams, error) {
-	p.params.kmeans_n_iters = C.uint32_t(kmeans_n_iters)
+	p.Params.kmeans_n_iters = C.uint32_t(kmeans_n_iters)
 	return p, nil
 }
 
@@ -71,13 +71,13 @@ func (p *IndexParams) SetKMeansNIters(kmeans_n_iters uint32) (*IndexParams, erro
 // subsampled, and only n_samples * kmeans_trainset_fraction rows
 // are used for training.
 func (p *IndexParams) SetKMeansTrainsetFraction(kmeans_trainset_fraction float64) (*IndexParams, error) {
-	p.params.kmeans_trainset_fraction = C.double(kmeans_trainset_fraction)
+	p.Params.kmeans_trainset_fraction = C.double(kmeans_trainset_fraction)
 	return p, nil
 }
 
 // The bit length of the vector element after quantization.
 func (p *IndexParams) SetPQBits(pq_bits uint32) (*IndexParams, error) {
-	p.params.pq_bits = C.uint32_t(pq_bits)
+	p.Params.pq_bits = C.uint32_t(pq_bits)
 	return p, nil
 }
 
@@ -91,7 +91,7 @@ func (p *IndexParams) SetPQBits(pq_bits uint32) (*IndexParams, error) {
 // it is desirable that 'pq_dim' is a multiple of 32. Ideally,
 // 'pq_dim' should be also a divisor of the dataset dim.
 func (p *IndexParams) SetPQDim(pq_dim uint32) (*IndexParams, error) {
-	p.params.pq_dim = C.uint32_t(pq_dim)
+	p.Params.pq_dim = C.uint32_t(pq_dim)
 	return p, nil
 }
 
@@ -101,7 +101,7 @@ func (p *IndexParams) SetCodebookKind(codebook_kind codebookKind) (*IndexParams,
 	if !exists {
 		return nil, errors.New("cuvs: invalid codebook_kind")
 	}
-	p.params.codebook_kind = uint32(CCodebookKind)
+	p.Params.codebook_kind = uint32(CCodebookKind)
 
 	return p, nil
 }
@@ -119,9 +119,9 @@ func (p *IndexParams) SetCodebookKind(codebook_kind codebookKind) (*IndexParams,
 // `force_random_rotation == True`, a random orthogonal transform
 func (p *IndexParams) SetForceRandomRotation(force_random_rotation bool) (*IndexParams, error) {
 	if force_random_rotation {
-		p.params.force_random_rotation = C._Bool(true)
+		p.Params.force_random_rotation = C._Bool(true)
 	} else {
-		p.params.force_random_rotation = C._Bool(false)
+		p.Params.force_random_rotation = C._Bool(false)
 	}
 	return p, nil
 }
@@ -132,16 +132,16 @@ func (p *IndexParams) SetForceRandomRotation(force_random_rotation bool) (*Index
 // to add new vectors to the index.
 func (p *IndexParams) SetAddDataOnBuild(add_data_on_build bool) (*IndexParams, error) {
 	if add_data_on_build {
-		p.params.add_data_on_build = C._Bool(true)
+		p.Params.add_data_on_build = C._Bool(true)
 	} else {
-		p.params.add_data_on_build = C._Bool(false)
+		p.Params.add_data_on_build = C._Bool(false)
 	}
 	return p, nil
 }
 
 // Destroys IndexParams
 func (p *IndexParams) Close() error {
-	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsIvfPqIndexParamsDestroy(p.params)))
+	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsIvfPqIndexParamsDestroy(p.Params)))
 	if err != nil {
 		return err
 	}

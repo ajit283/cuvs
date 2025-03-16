@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	cuvs "github.com/rapidsai/cuvs/go"
+	"github.com/rapidsai/cuvs/go/ivf_pq"
 )
 
 func TestCagra(t *testing.T) {
@@ -63,7 +64,7 @@ func TestCagra(t *testing.T) {
 		t.Fatalf("error moving dataset to device: %v", err)
 	}
 
-	if err := BuildIndex(resource, indexParams, &dataset, index); err != nil {
+	if err := BuildIndex(resource, indexParams, &dataset, index, nil, nil); err != nil {
 		t.Fatalf("error building index: %v", err)
 	}
 
@@ -181,7 +182,7 @@ func TestCagraFiltering(t *testing.T) {
 		t.Fatalf("error moving dataset to device: %v", err)
 	}
 
-	if err := BuildIndex(resource, indexParams, &dataset, index); err != nil {
+	if err := BuildIndex(resource, indexParams, &dataset, index, nil, nil); err != nil {
 		t.Fatalf("error building index: %v", err)
 	}
 
@@ -322,6 +323,161 @@ func TestCagraFiltering(t *testing.T) {
 		}
 		if distancesSlice[i][0] >= epsilon || distancesSlice[i][0] <= -epsilon {
 			t.Error("with filter: distance should be close to 0 for filtered query, got", distancesSlice[i][0])
+		}
+	}
+}
+
+func TestCagraIVFPQ(t *testing.T) {
+	const (
+		nDataPoints = 512000
+		nFeatures   = 768
+		nQueries    = 4
+		k           = 4
+		epsilon     = 0.001
+	)
+
+	resource, _ := cuvs.NewResource(nil)
+	defer resource.Close()
+
+	// Generate random dataset
+	testDataset := make([][]float32, nDataPoints)
+	for i := range testDataset {
+		testDataset[i] = make([]float32, nFeatures)
+		for j := range testDataset[i] {
+			testDataset[i][j] = rand.Float32()
+		}
+	}
+
+	dataset, err := cuvs.NewTensor(testDataset)
+	if err != nil {
+		t.Fatalf("error creating dataset tensor: %v", err)
+	}
+	defer dataset.Close()
+
+	// Create index params for normal Cagra index
+	indexParams, err := CreateIndexParams()
+	if err != nil {
+		t.Fatalf("error creating index params: %v", err)
+	}
+
+	indexParams.SetGraphDegree(64)
+	indexParams.SetIntermediateGraphDegree(128)
+	indexParams.SetBuildAlgo(IvfPq)
+	defer indexParams.Close()
+
+	// Create IVF PQ index params
+	ivfPqIndexParams, err := ivf_pq.CreateIndexParams()
+	if err != nil {
+		t.Fatalf("error creating IVF PQ index params: %v", err)
+	}
+
+	// Example configurations; adjust as necessary
+	// ivfPqIndexParams.SetNLists(256)
+	// ivfPqIndexParams.SetPQBits(8)
+	// ivfPqIndexParams.SetPQDim(8)
+	ivfPqIndexParams.SetPQDim(128)
+	ivfPqIndexParams.SetPQBits(8)
+	ivfPqIndexParams.SetNLists(5000)
+	ivfPqIndexParams.SetKMeansNIters(10)
+
+	defer ivfPqIndexParams.Close()
+
+	ivfPqSearchParams, err := ivf_pq.CreateSearchParams()
+	if err != nil {
+		t.Fatalf("error creating IVF PQ search params: %v", err)
+	}
+	ivfPqSearchParams.SetNProbes(10)
+
+	ivfPqSearchParams.SetInternalDistanceDtype(ivf_pq.InternalDistance_Float32)
+	ivfPqSearchParams.SetLutDtype(ivf_pq.Lut_Uint8)
+
+	defer ivfPqSearchParams.Close()
+
+	index, err := CreateIndex()
+	if err != nil {
+		t.Fatalf("error creating index: %v", err)
+	}
+	defer index.Close()
+
+	queries, err := cuvs.NewTensor(testDataset[:nQueries])
+	if err != nil {
+		t.Fatalf("error creating queries tensor: %v", err)
+	}
+	defer queries.Close()
+
+	neighbors, err := cuvs.NewTensorOnDevice[uint32](&resource, []int64{int64(nQueries), int64(k)})
+	if err != nil {
+		t.Fatalf("error creating neighbors tensor: %v", err)
+	}
+	defer neighbors.Close()
+
+	distances, err := cuvs.NewTensorOnDevice[float32](&resource, []int64{int64(nQueries), int64(k)})
+	if err != nil {
+		t.Fatalf("error creating distances tensor: %v", err)
+	}
+	defer distances.Close()
+
+	// Move dataset to device
+	if _, err := dataset.ToDevice(&resource); err != nil {
+		t.Fatalf("error moving dataset to device: %v", err)
+	}
+
+	// Build the index with IVF PQ parameters included
+	if err := BuildIndex(resource, indexParams, &dataset, index, ivfPqIndexParams, ivfPqSearchParams); err != nil {
+		t.Fatalf("error building index with IVF PQ params: %v", err)
+	}
+
+	if err := resource.Sync(); err != nil {
+		t.Fatalf("error syncing resource after index build: %v", err)
+	}
+
+	// Proceed with querying to ensure it works
+	if _, err := queries.ToDevice(&resource); err != nil {
+		t.Fatalf("error moving queries to device: %v", err)
+	}
+
+	searchParams, err := CreateSearchParams()
+	if err != nil {
+		t.Fatalf("error creating search params: %v", err)
+	}
+	defer searchParams.Close()
+
+	err = SearchIndex(resource, searchParams, index, &queries, &neighbors, &distances, nil)
+	if err != nil {
+		t.Fatalf("error searching index: %v", err)
+	}
+
+	if _, err := neighbors.ToHost(&resource); err != nil {
+		t.Fatalf("error moving neighbors to host: %v", err)
+	}
+
+	if _, err := distances.ToHost(&resource); err != nil {
+		t.Fatalf("error moving distances to host: %v", err)
+	}
+
+	if err := resource.Sync(); err != nil {
+		t.Fatalf("error syncing resource after search: %v", err)
+	}
+
+	neighborsSlice, err := neighbors.Slice()
+	if err != nil {
+		t.Fatalf("error getting neighbors slice: %v", err)
+	}
+
+	for i := range neighborsSlice {
+		if neighborsSlice[i][0] != uint32(i) {
+			t.Error("wrong neighbor, expected", i, "got", neighborsSlice[i][0])
+		}
+	}
+
+	distancesSlice, err := distances.Slice()
+	if err != nil {
+		t.Fatalf("error getting distances slice: %v", err)
+	}
+
+	for i := range distancesSlice {
+		if distancesSlice[i][0] >= epsilon || distancesSlice[i][0] <= -epsilon {
+			t.Error("distance should be close to 0, got", distancesSlice[i][0])
 		}
 	}
 }
