@@ -35,7 +35,7 @@ func NewCuvsPoolMemory(initial_pool_size_percent int, max_pool_size_percent int,
 		managed:                   managed,
 	}
 
-	c.start()
+	c.Start()
 	c.ch <- CuvsMemoryNew
 
 	if err := <-c.errCh; err != nil {
@@ -46,7 +46,7 @@ func NewCuvsPoolMemory(initial_pool_size_percent int, max_pool_size_percent int,
 }
 
 // Enables pool memory
-func (m *CuvsPoolMemory) start() {
+func (m *CuvsPoolMemory) Start() {
 	go func() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()

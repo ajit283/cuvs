@@ -12,7 +12,7 @@ import (
 )
 
 type TensorNumberType interface {
-	int64 | uint32 | float32
+	int64 | uint64 | uint32 | float32
 }
 
 // ManagedTensor is a wrapper around a dlpack DLManagedTensor object.
@@ -233,6 +233,7 @@ func (t *Tensor[T]) ToDevice(res *Resource) (*Tensor[T], error) {
 		C.cuvsRMMFree(res.Resource, DeviceDataPointer, C.size_t(bytes))
 		return nil, err
 	}
+	C.free(unsafe.Pointer(t.C_tensor.dl_tensor.data))
 	t.C_tensor.dl_tensor.device.device_type = C.kDLCUDA
 	t.C_tensor.dl_tensor.data = DeviceDataPointer
 
@@ -381,6 +382,12 @@ func getDLDataType[T TensorNumberType]() C.DLDataType {
 			lanes: C.ushort(1),
 			code:  C.kDLInt,
 		}
+	case uint64:
+		return C.DLDataType{
+			bits:  C.uchar(64),
+			lanes: C.ushort(1),
+			code:  C.kDLUInt,
+		}
 	case uint32:
 		return C.DLDataType{
 			bits:  C.uchar(32),
@@ -394,7 +401,7 @@ func getDLDataType[T TensorNumberType]() C.DLDataType {
 			code:  C.kDLFloat,
 		}
 	}
-	panic("unreachable") // Go compiler ensures this is unreachable
+	panic("unreachable")
 }
 
 func flattenData[T TensorNumberType](data [][]T, dest []T) {

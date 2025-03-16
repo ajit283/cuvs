@@ -1,6 +1,7 @@
 package cagra
 
 // #include <cuvs/neighbors/cagra.h>
+// #include <cuvs/distance/distance.h>
 import "C"
 
 import (
@@ -107,6 +108,17 @@ func CreateIndexParams() (*IndexParams, error) {
 	IndexParams := &IndexParams{params: params}
 
 	return IndexParams, nil
+}
+
+// Distance metric
+func (p *IndexParams) SetMetric(metric cuvs.Distance) (*IndexParams, error) {
+	CMetric, exists := cuvs.CDistances[metric]
+
+	if !exists {
+		return nil, errors.New("cuvs: invalid metric")
+	}
+	p.params.metric = C.cuvsDistanceType(CMetric)
+	return p, nil
 }
 
 // Degree of input graph for pruning
