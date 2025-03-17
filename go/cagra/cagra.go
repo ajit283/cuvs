@@ -1,6 +1,7 @@
 package cagra
 
 // #include <cuvs/neighbors/cagra.h>
+// #include <stdlib.h>
 import "C"
 
 import (
@@ -133,4 +134,66 @@ func createBitset(allowList []uint32) []uint32 {
 		bitset[arrayIndex] |= 1 << bitPosition
 	}
 	return bitset
+}
+
+// Serialize saves the index to a file
+//
+// # Arguments
+//
+// * `Resources` - Resources to use
+// * `filename` - the file name for saving the index
+// * `index` - CagraIndex to save
+// * `includeDataset` - Whether or not to write out the dataset to the file
+func SerializeIndex(Resources cuvs.Resource, filename string, index *CagraIndex, includeDataset bool) error {
+	if !index.trained {
+		return errors.New("index needs to be built before calling serialize")
+	}
+	cFilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cFilename))
+
+	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraSerialize(C.ulong(Resources.Resource), cFilename, index.index, C.bool(includeDataset))))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SerializeToHnswlib saves the CAGRA index to file in hnswlib format
+//
+// # Arguments
+//
+// * `Resources` - Resources to use
+// * `filename` - the file name for saving the index
+// * `index` - CagraIndex to save
+func SerializeIndexToHnswlib(Resources cuvs.Resource, filename string, index *CagraIndex) error {
+	if !index.trained {
+		return errors.New("index needs to be built before calling serialize")
+	}
+	cFilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cFilename))
+
+	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraSerializeToHnswlib(C.ulong(Resources.Resource), cFilename, index.index)))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Deserialize loads index from file
+//
+// # Arguments
+//
+// * `Resources` - Resources to use
+// * `filename` - the name of the file that stores the index
+// * `index` - CagraIndex to load into
+func DeserializeIndex(Resources cuvs.Resource, filename string, index *CagraIndex) error {
+	cFilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cFilename))
+
+	err := cuvs.CheckCuvs(cuvs.CuvsError(C.cuvsCagraDeserialize(C.ulong(Resources.Resource), cFilename, index.index)))
+	if err != nil {
+		return err
+	}
+	index.trained = true
+	return nil
 }
